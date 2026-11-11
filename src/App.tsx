@@ -70,6 +70,12 @@ export default function App() {
         onClose={() => setSelectedProject(null)}
         onInquireProject={(project) => {
           setSelectedProject(null);
+
+          if (project.slug === 'fleet-management-system') {
+            window.open('https://33fleet.com/auth/registration', '_blank', 'noopener,noreferrer');
+            return;
+          }
+
           if (project.websiteUrl) {
             window.open(project.websiteUrl, '_blank', 'noopener,noreferrer');
           }
