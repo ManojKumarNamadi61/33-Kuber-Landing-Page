@@ -10,7 +10,7 @@ interface ServiceItem {
   title: string;
   image: string;
   description: string;
-  icon: 'web' | 'custom' | 'product';
+  icon: 'web' | 'custom' | 'product' | 'advisory';
 }
 
 const ServiceIcon: React.FC<{ type: ServiceItem['icon'] }> = ({ type }) => {
@@ -32,6 +32,12 @@ const ServiceIcon: React.FC<{ type: ServiceItem['icon'] }> = ({ type }) => {
         <path d="M12 3.5L18.5 7V17L12 20.5L5.5 17V7L12 3.5Z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
         <path d="M12 7.5V12M9.5 9.5H14.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
       </svg>
+    ),
+    advisory: (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 text-[#17191D]">
+        <path d="M12 4.5L18 7.5V11.5C18 15.5 15.2 18.8 12 19.5C8.8 18.8 6 15.5 6 11.5V7.5L12 4.5Z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+        <path d="M9.5 12H14.5M12 9.5V14.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
     )
   };
 
@@ -42,26 +48,34 @@ const SERVICES_DATA: ServiceItem[] = [
   {
     id: 'web-dev',
     number: '01',
-    title: 'WEB DEVELOPMENT',
+    title: 'Web Development',
     image: '/assets/aistudio/service_3d_web.png',
-    description: 'Scalable, secure, and responsive web applications engineered for exceptional user experience and performance.',
+    description: 'Scalable, secure, and responsive web applications engineered for performance, clarity, and long-term maintainability.',
     icon: 'web'
   },
   {
     id: 'custom-solutions',
     number: '02',
-    title: 'CUSTOMIZED SOLUTIONS',
+    title: 'Customized Solutions',
     image: '/assets/aistudio/service_3d_custom.png',
-    description: 'Tailor-made software designed around your unique workflows, processes, and growth objectives.',
+    description: 'Tailor-made software designed around your workflows, operational requirements, and specific growth objectives.',
     icon: 'custom'
   },
   {
     id: 'product-dev',
     number: '03',
-    title: 'PRODUCT DEVELOPMENT',
+    title: 'Product Development',
     image: '/assets/aistudio/service_3d_product.png',
-    description: 'Turn ideas into market-ready digital products through strategy, design, agile build, and continuous optimization.',
+    description: 'From concept to launch, we shape digital products with product strategy, rapid delivery, and structured optimization.',
     icon: 'product'
+  },
+  {
+    id: 'technology-advisory',
+    number: '04',
+    title: 'Technology Advisory',
+    image: '/assets/aistudio/service_3d_custom.png',
+    description: 'Architecture guidance, tech due diligence, roadmap planning, and delivery governance for teams building critical platforms.',
+    icon: 'advisory'
   }
 ];
 
@@ -79,11 +93,11 @@ export const Skills: React.FC<SkillsProps> = ({ onContactClick }) => {
             </h2>
           </div>
           <p className="text-sm sm:text-base text-[#747B86] max-w-sm leading-relaxed">
-            We design resilient digital systems, automate operations, and engineer products that stay fast, reliable, and ready for scale.
+            We design resilient digital systems, automate operations, and engineer products that remain fast, reliable, and ready for scale.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-6 lg:gap-8 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 sm:gap-6 lg:gap-8 items-stretch">
           {SERVICES_DATA.map((service) => (
             <article
               key={service.id}

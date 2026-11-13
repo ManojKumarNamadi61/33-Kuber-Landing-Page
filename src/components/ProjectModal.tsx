@@ -8,7 +8,20 @@ interface ProjectModalProps {
   onInquireProject: (project: Project) => void;
 }
 
-const fleetPlans = [
+export type SubscriptionPlanId = 'starter' | 'growth' | 'professional' | 'enterprise';
+
+export type FleetPlan = {
+  id: SubscriptionPlanId;
+  name: string;
+  price: string;
+  cadence: string;
+  description: string;
+  allowance: string;
+  users: string;
+  featured: boolean;
+};
+
+export const fleetPlans: FleetPlan[] = [
   {
     id: 'starter',
     name: 'STARTER',
@@ -49,9 +62,9 @@ const fleetPlans = [
     users: 'Negotiated trip limits',
     featured: false,
   },
-] as const;
+];
 
-const fleetComparisonRows = [
+export const fleetComparisonRows = [
   { feature: 'Vehicle and driver master', starter: true, growth: true, professional: true },
   { feature: 'Trip booking and dispatch', starter: true, growth: true, professional: true },
   { feature: 'Trip expenses', starter: true, growth: true, professional: true },
@@ -67,7 +80,7 @@ const fleetComparisonRows = [
   { feature: 'Approval workflows', starter: false, growth: false, professional: true },
 ] as const;
 
-const fleetAddOns = [
+export const fleetAddOns = [
   { name: 'Additional active vehicle', price: '₹100/month', rule: 'Beyond plan allowance' },
   { name: 'Additional back-office user', price: '₹99/month', rule: 'Beyond included seats' },
   { name: 'Advanced accounting', price: '₹799/month', rule: 'Per tenant' },
@@ -76,7 +89,7 @@ const fleetAddOns = [
   { name: 'Data migration', price: '₹2,000–₹15,000', rule: 'One-time' },
 ] as const;
 
-const fleetDeploymentPricing = [
+export const fleetDeploymentPricing = [
   {
     name: 'Starter',
     setup: '₹10,000',
@@ -109,12 +122,84 @@ const renderFeatureValue = (value: boolean | string) => {
   return <span className="text-[#747B86] text-xs sm:text-sm font-medium">{value}</span>;
 };
 
+export type SubscriptionPlan = {
+  id: SubscriptionPlanId;
+  label: string;
+  price: number;
+  includedVehicles: number;
+  includedUsers: number;
+};
+
+export const fleetPricingTiers: SubscriptionPlan[] = [
+  { id: 'starter', label: 'Starter', price: 999, includedVehicles: 5, includedUsers: 3 },
+  { id: 'growth', label: 'Growth', price: 2499, includedVehicles: 20, includedUsers: 8 },
+  { id: 'professional', label: 'Professional', price: 5999, includedVehicles: 50, includedUsers: 20 },
+  { id: 'enterprise', label: 'Enterprise', price: 0, includedVehicles: 9999, includedUsers: 9999 },
+];
+
+const customSubscriptionDefaults = {
+  vehicles: 20,
+  users: 8,
+};
+
+export const additionalVehicleRate = 100;
+export const additionalUserRate = 99;
+
+export const formatMoney = (value: number) =>
+  new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(value);
+
+export const getCustomSubscriptionEstimate = (vehicleCount: number, userCount: number) => {
+  const safeVehicleCount = Math.max(1, Math.round(vehicleCount || 1));
+  const safeUserCount = Math.max(1, Math.round(userCount || 1));
+
+  let baseTier: SubscriptionPlan = fleetPricingTiers[1];
+
+  if (safeVehicleCount <= fleetPricingTiers[0].includedVehicles && safeUserCount <= fleetPricingTiers[0].includedUsers) {
+    baseTier = fleetPricingTiers[0];
+  } else if (
+    safeVehicleCount <= fleetPricingTiers[1].includedVehicles &&
+    safeUserCount <= fleetPricingTiers[1].includedUsers
+  ) {
+    baseTier = fleetPricingTiers[1];
+  } else if (
+    safeVehicleCount <= fleetPricingTiers[2].includedVehicles &&
+    safeUserCount <= fleetPricingTiers[2].includedUsers
+  ) {
+    baseTier = fleetPricingTiers[2];
+  } else {
+    baseTier = fleetPricingTiers[3];
+  }
+
+  const additionalVehicleUnits = Math.max(0, safeVehicleCount - baseTier.includedVehicles);
+  const additionalUserUnits = Math.max(0, safeUserCount - baseTier.includedUsers);
+
+  const baseMonthlyPrice = baseTier.price;
+  const additionalVehicleCharge = additionalVehicleUnits * additionalVehicleRate;
+  const additionalUserCharge = additionalUserUnits * additionalUserRate;
+  const monthlySubscription = baseMonthlyPrice + additionalVehicleCharge + additionalUserCharge;
+  const annualSubscription = monthlySubscription * 12;
+
+  return {
+    baseTier,
+    baseMonthlyPrice,
+    additionalVehicleUnits,
+    additionalUserUnits,
+    additionalVehicleCharge,
+    additionalUserCharge,
+    monthlySubscription,
+    annualSubscription,
+  };
+};
+
 export const ProjectModal: React.FC<ProjectModalProps> = ({
   project,
   onClose,
   onInquireProject,
 }) => {
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+  const [customVehicleCount, setCustomVehicleCount] = useState<number>(customSubscriptionDefaults.vehicles);
+  const [customUserCount, setCustomUserCount] = useState<number>(customSubscriptionDefaults.users);
 
   useEffect(() => {
     if (!project) return;
@@ -126,6 +211,9 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
     document.body.style.overflow = 'hidden';
     window.addEventListener('keydown', handleKeyDown);
     setSelectedPlanId(null);
+    setBillingCycle('monthly');
+    setCustomVehicleCount(customSubscriptionDefaults.vehicles);
+    setCustomUserCount(customSubscriptionDefaults.users);
 
     return () => {
       document.body.style.overflow = 'unset';
@@ -136,10 +224,25 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
   if (!project) return null;
 
   const isFleetProject = project.slug === 'fleet-management-system';
+  const customEstimate = getCustomSubscriptionEstimate(customVehicleCount, customUserCount);
+  const sortedCustomPrice = billingCycle === 'annual' ? customEstimate.annualSubscription : customEstimate.monthlySubscription;
 
   const handleSelectPlan = (planId: string) => {
     setSelectedPlanId(planId);
+
+    if (planId === 'enterprise') return;
+
     window.open('https://33fleet.com/auth/registration', '_blank', 'noopener,noreferrer');
+  };
+
+  const handleQuantityChange = (
+    setter: React.Dispatch<React.SetStateAction<number>>,
+    value: number,
+    minimum: number,
+    maximum: number,
+  ) => {
+    const clampedValue = Math.min(maximum, Math.max(minimum, Number.isFinite(value) ? value : minimum));
+    setter(clampedValue);
   };
 
   return (
@@ -293,6 +396,174 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({
                   ))}
                 </div>
               </div>
+
+              {selectedPlanId === 'enterprise' && (
+                <div className="rounded-2xl border border-[#E8EAEE] bg-[#F8F9FB] p-4 sm:p-5">
+                  <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                      <h4 className="text-xs sm:text-sm font-medium text-[#17191D] uppercase tracking-wider">
+                        Estimate Custom Subscription
+                      </h4>
+                      <p className="mt-1 text-sm text-[#747B86]">
+                        Tailored quote based on your fleet and team size.
+                      </p>
+                    </div>
+
+                    <div className="inline-flex rounded-full border border-[#E8EAEE] bg-white p-1">
+                      {(['monthly', 'annual'] as const).map((cycle) => (
+                        <button
+                          key={cycle}
+                          type="button"
+                          onClick={() => setBillingCycle(cycle)}
+                          className={`rounded-full px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.12em] transition-colors ${
+                            billingCycle === cycle
+                              ? 'bg-[#17191D] text-white'
+                              : 'text-[#747B86] hover:text-[#17191D]'
+                          }`}
+                        >
+                          {cycle}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                    <div className="space-y-2 rounded-xl border border-[#E8EAEE] bg-white p-3.5">
+                      <div className="flex items-center justify-between gap-3">
+                        <label className="text-sm font-medium text-[#17191D]">Number of Vehicles</label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={500}
+                          value={customVehicleCount}
+                          onChange={(event) =>
+                            handleQuantityChange(
+                              setCustomVehicleCount,
+                              Number(event.target.value),
+                              1,
+                              500,
+                            )
+                          }
+                          className="w-20 rounded-md border border-[#E8EAEE] bg-[#F8F9FB] px-2 py-1 text-right text-sm text-[#17191D] focus:border-[#1a62ff] focus:outline-none"
+                        />
+                      </div>
+
+                      <input
+                        type="range"
+                        min={1}
+                        max={500}
+                        value={customVehicleCount}
+                        onChange={(event) =>
+                          handleQuantityChange(
+                            setCustomVehicleCount,
+                            Number(event.target.value),
+                            1,
+                            500,
+                          )
+                        }
+                        className="w-full accent-[#1a62ff]"
+                      />
+                    </div>
+
+                    <div className="space-y-2 rounded-xl border border-[#E8EAEE] bg-white p-3.5">
+                      <div className="flex items-center justify-between gap-3">
+                        <label className="text-sm font-medium text-[#17191D]">Number of Users</label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={500}
+                          value={customUserCount}
+                          onChange={(event) =>
+                            handleQuantityChange(
+                              setCustomUserCount,
+                              Number(event.target.value),
+                              1,
+                              500,
+                            )
+                          }
+                          className="w-20 rounded-md border border-[#E8EAEE] bg-[#F8F9FB] px-2 py-1 text-right text-sm text-[#17191D] focus:border-[#1a62ff] focus:outline-none"
+                        />
+                      </div>
+
+                      <input
+                        type="range"
+                        min={1}
+                        max={500}
+                        value={customUserCount}
+                        onChange={(event) =>
+                          handleQuantityChange(
+                            setCustomUserCount,
+                            Number(event.target.value),
+                            1,
+                            500,
+                          )
+                        }
+                        className="w-full accent-[#1a62ff]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-5 h-px bg-[#E8EAEE]" />
+
+                  <div className="mt-5 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                    <div>
+                      <div className="text-[11px] font-medium uppercase tracking-[0.12em] text-[#747B86]">
+                        Estimated Custom Subscription
+                      </div>
+                      <div className="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-[#17191D]">
+                        ₹{formatMoney(sortedCustomPrice)}
+                      </div>
+                      <div className="mt-2 text-xs sm:text-sm text-[#747B86]">
+                        {billingCycle === 'annual'
+                          ? 'Annual pricing shown below is billed upfront and excludes GST.'
+                          : 'Monthly pricing shown excludes GST.'}
+                      </div>
+                    </div>
+
+                    <div className="min-w-[220px] rounded-xl border border-[#E8EAEE] bg-white p-3 text-sm text-[#17191D]">
+                      <div className="flex items-center justify-between gap-3 border-b border-[#E8EAEE] pb-2">
+                        <span className="text-[#747B86]">Vehicles</span>
+                        <span className="font-medium">{customVehicleCount}</span>
+                      </div>
+                      <div className="mt-2 flex items-center justify-between gap-3 border-b border-[#E8EAEE] pb-2">
+                        <span className="text-[#747B86]">Users</span>
+                        <span className="font-medium">{customUserCount}</span>
+                      </div>
+                      <div className="mt-2 flex items-center justify-between gap-3">
+                        <span className="text-[#747B86]">{billingCycle === 'annual' ? 'Annual total' : 'Monthly total'}</span>
+                        <span className="font-medium">
+                          ₹{formatMoney(sortedCustomPrice)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 rounded-xl border border-[#E8EAEE] bg-white p-3 sm:p-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-[#17191D]">
+                      <div className="flex items-center justify-between gap-3 rounded-lg bg-[#F8F9FB] px-3 py-2">
+                        <span className="text-[#747B86]">Base plan</span>
+                        <span className="font-medium">{customEstimate.baseTier.label}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 rounded-lg bg-[#F8F9FB] px-3 py-2">
+                        <span className="text-[#747B86]">{billingCycle === 'annual' ? 'Annual' : 'Monthly'} amount</span>
+                        <span className="font-medium">₹{formatMoney(sortedCustomPrice)}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 rounded-lg bg-[#F8F9FB] px-3 py-2">
+                        <span className="text-[#747B86]">Additional vehicle charge</span>
+                        <span className="font-medium">₹{formatMoney(customEstimate.additionalVehicleCharge)}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 rounded-lg bg-[#F8F9FB] px-3 py-2">
+                        <span className="text-[#747B86]">Additional user charge</span>
+                        <span className="font-medium">₹{formatMoney(customEstimate.additionalUserCharge)}</span>
+                      </div>
+                    </div>
+
+                    <p className="mt-3 text-xs leading-relaxed text-[#747B86]">
+                      Estimated figures exclude GST. Final invoice will include applicable GST as per the selected billing arrangement.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               <div id="fleet-features" className="space-y-3">
                 <h4 className="text-xs sm:text-sm font-medium text-[#17191D] uppercase tracking-wider">

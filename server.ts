@@ -8,7 +8,8 @@ import { GoogleGenAI } from '@google/genai';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+const DEFAULT_PORT = 3000;
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : DEFAULT_PORT;
 
 // Support large payloads for base64 image uploads
 app.use(express.json({ limit: '60mb' }));
@@ -219,9 +220,32 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[33 Kuber Addvisory Server] Running on http://0.0.0.0:${PORT}`);
-  });
+  const startListening = (port: number) => {
+    const server = app.listen(port, '0.0.0.0', () => {
+      const startupUrl = `http://localhost:${port}`;
+      console.log('');
+      console.log('========================================');
+      console.log('[33 Kuber Advisory] Development server ready');
+      console.log(`Local URL: ${startupUrl}`);
+      console.log(`Health check: ${startupUrl}/api/health`);
+      console.log('========================================');
+      console.log('');
+    });
+
+    server.on('error', (error: NodeJS.ErrnoException) => {
+      if (error.code === 'EADDRINUSE') {
+        const nextPort = port + 1;
+        console.warn(`[33 Kuber Advisory] Port ${port} is in use. Retrying on ${nextPort}...`);
+        startListening(nextPort);
+        return;
+      }
+
+      console.error('[33 Kuber Advisory] Failed to start server:', error);
+      process.exit(1);
+    });
+  };
+
+  startListening(Number.isFinite(PORT) && PORT > 0 ? PORT : DEFAULT_PORT);
 }
 
 startServer();

@@ -445,35 +445,48 @@ export const SERVICES = [
   }
 ];
 
-export const PROCESS_STEPS = [
+export type ProcessStep = {
+  step: string;
+  title: string;
+  tagline: string;
+  description: string;
+  tags: string[];
+};
+
+export const PROCESS_STEPS: ProcessStep[] = [
   {
     step: '01',
     title: 'Agile & Client-Focused Discovery',
     tagline: 'Deep domain immersion and roadmap definition',
-    description: 'We begin every engagement with rigorous stakeholder discovery sessions, user workflow mapping, and clear KPIs. We define technical requirements and architectural blueprints with zero ambiguity.'
+    description: 'We begin every engagement with rigorous stakeholder discovery sessions, user workflow mapping, and clear KPIs. We define technical requirements and architectural blueprints with zero ambiguity.',
+    tags: ['Discovery', 'Roadmap', 'KPI Alignment']
   },
   {
     step: '02',
     title: 'Expert Full-Stack Architecture',
     tagline: 'Clean modular codebases built for enterprise scale',
-    description: 'Our senior engineers craft battle-tested system architectures: resilient database schemas, fault-tolerant microservices, high-performance UI layers, and scalable cloud infrastructures.'
+    description: 'Our senior engineers craft battle-tested system architectures: resilient database schemas, fault-tolerant microservices, high-performance UI layers, and scalable cloud infrastructures.',
+    tags: ['Architecture', 'Scalable Systems', 'Cloud Design']
   },
   {
     step: '03',
     title: 'Quality & Security-First Hardening',
     tagline: 'Automated testing and vulnerability mitigation',
-    description: 'Security is baked in from day zero. We enforce rigorous automated unit and integration tests, end-to-end regression pipelines, data encryption at rest and in transit, and strict compliance standards.'
+    description: 'Security is baked in from day zero. We enforce rigorous automated unit and integration tests, end-to-end regression pipelines, data encryption at rest and in transit, and strict compliance standards.',
+    tags: ['Security', 'Quality Gates', 'Regression Testing']
   },
   {
     step: '04',
     title: 'End-to-End Enterprise Solutions',
     tagline: 'Production-ready delivery with seamless integration',
-    description: 'We orchestrate the entire deployment pipeline—from database migrations and API gateways to mobile app store submissions and cloud orchestrations—guaranteeing zero disruptions.'
+    description: 'We orchestrate the entire deployment pipeline—from database migrations and API gateways to mobile app store submissions and cloud orchestrations—guaranteeing zero disruptions.',
+    tags: ['Deployment', 'Platform Delivery', 'Operations']
   },
   {
     step: '05',
     title: 'Transparent Communication & Delivery',
     tagline: 'Bi-weekly sprint demos and dedicated engineering liaisons',
-    description: 'We maintain absolute transparency with shared sprint backlogs, live demo environments, rapid feedback cycles, and dedicated project managers who speak both business and engineering.'
+    description: 'We maintain absolute transparency with shared sprint backlogs, live demo environments, rapid feedback cycles, and dedicated project managers who speak both business and engineering.',
+    tags: ['Sprint Reviews', 'Delivery Transparency', 'Stakeholder Alignment']
   }
 ];

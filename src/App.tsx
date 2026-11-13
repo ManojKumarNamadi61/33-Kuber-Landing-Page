@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { AboutUs } from './components/AboutUs';
@@ -7,10 +7,31 @@ import { Skills } from './components/Skills';
 import { ProcessTimeline } from './components/ProcessTimeline';
 import { Footer } from './components/Footer';
 import { ProjectModal } from './components/ProjectModal';
+import { FleetProjectPage } from './components/FleetProjectPage.tsx';
 import { Project, PROJECTS } from './data/projectsData';
 
 export default function App() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [currentPath, setCurrentPath] = useState<string>(window.location.pathname);
+
+  const navigateToPath = (path: string) => {
+    const nextPath = path.startsWith('/') ? path : `/${path}`;
+    window.history.pushState({}, '', nextPath);
+    setCurrentPath(window.location.pathname);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname);
+      if (window.location.pathname !== '/projects/fleet-management-system') {
+        setSelectedProject(null);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const scrollToSection = (sectionId: string) => {
     const el = document.getElementById(sectionId);
@@ -32,39 +53,53 @@ export default function App() {
     }
   };
 
+  const handleOpenProject = (project: Project) => {
+    if (project.slug === 'fleet-management-system') {
+      navigateToPath('/projects/fleet-management-system');
+      return;
+    }
+
+    setSelectedProject(project);
+  };
+
+  if (currentPath === '/projects/fleet-management-system') {
+    return (
+      <FleetProjectPage
+        onBack={() => {
+          if (window.history.length > 1) {
+            window.history.back();
+            setCurrentPath(window.location.pathname);
+            return;
+          }
+          navigateToPath('/');
+        }}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white text-[#17191D] flex flex-col font-sans selection:bg-[#1a62ff] selection:text-white antialiased">
-      {/* 1. Minimal Sticky Navbar (Logo on left, Let's Talk CTA on right) */}
       <Navbar onNavigateSection={scrollToSection} />
 
       <main className="flex-1">
-        {/* 2. Full-Screen 100svh Hero with Full Photographic 3D Brain Background */}
         <Hero
           onExploreProjects={() => scrollToSection('projects')}
           onContactClick={() => scrollToSection('contact')}
         />
 
-        {/* 3. About Us / Strategic IT Foundation (No office cards) */}
         <AboutUs />
 
-        {/* 4. Featured Engineering Projects (2x2 Grid) */}
         <ProjectsShowcase
-          onOpenProjectModal={(project) => setSelectedProject(project)}
+          onOpenProjectModal={handleOpenProject}
         />
 
-        {/* 5. Capabilities & Architectural Stacks (3 Pillars) */}
         <Skills onContactClick={() => scrollToSection('contact')} />
 
-        {/* 6. Engineering Methodology (Animated Connected Stepper) */}
         <ProcessTimeline />
       </main>
 
-      {/* 7. Little Dark Grid Footer */}
-      <Footer
-        onNavigateSection={scrollToSection}
-      />
+      <Footer onNavigateSection={scrollToSection} />
 
-      {/* 8. Interactive Framer-Style Project Modal */}
       <ProjectModal
         project={selectedProject}
         onClose={() => setSelectedProject(null)}
